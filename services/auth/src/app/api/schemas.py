@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, UUID4
+from pydantic import UUID4, BaseModel, EmailStr
 
 
 class LoginRequest(BaseModel):
@@ -25,7 +25,7 @@ class ChangePasswordRequest(BaseModel):
 class Token(BaseModel):
     access_token: str
     refresh_token: str
-    token_type: str = "bearer"
+    token_type: str = 'bearer'
 
 
 class UserResponse(BaseModel):
