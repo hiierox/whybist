@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import UUID4
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,7 +24,7 @@ class UserRepository:
     async def create_user(self, user_data: User) -> None:
         self.session.add(user_data)
 
-    async def update_user(self, user: User, **user_data) -> None:
+    async def update_user(self, user: User, **user_data: Any) -> None:
         for key, value in user_data.items():
             if value:
                 setattr(user, key, value)
