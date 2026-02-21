@@ -21,10 +21,13 @@ class UserRepository:
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def create_user(self, user_data: User) -> None:
+    async def create_user(self, user_data: User) -> User:
         self.session.add(user_data)
+        await self.session.flush()
+        return user_data
 
-    async def update_user(self, user: User, **user_data: Any) -> None:
+    async def update_user(self, user: User, **user_data: Any) -> User:
         for key, value in user_data.items():
-            if value:
-                setattr(user, key, value)
+            setattr(user, key, value)
+        await self.session.flush()
+        return user
