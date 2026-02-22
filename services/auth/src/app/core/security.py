@@ -25,7 +25,7 @@ def create_token(
 
 def create_access_token(user_id: UUID4) -> str:
     return create_token(
-        data={'sub': user_id},
+        data={'sub': str(user_id)},
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
         token_type='access',
     )
@@ -33,7 +33,7 @@ def create_access_token(user_id: UUID4) -> str:
 
 def create_refresh_token(user_id: UUID4) -> str:
     return create_token(
-        data={'sub': user_id},
+        data={'sub': str(user_id)},
         expires_delta=timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
         token_type='refresh',
     )
