@@ -1,0 +1,35 @@
+name: Python CI setup
+description: Setup Python, Poetry and install dev dependencies
+
+inputs:
+  service-path:
+    description: Path to service directory
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.14"
+
+    - name: Install poetry
+      run: pip install poetry
+      shell: bash
+
+    - name: Cache poetry
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/pypoetry
+          ~/.virtualenvs
+        key: poetry-${{ runner.os }}-${{ hashFiles(format('{0}/poetry.lock', inputs.service-path)) }}
+
+    - name: Install dependencies (dev only)
+      run: poetry install --only dev --no-interaction --no-root
+      working-directory: ${{ inputs.service-path }}
+      shell: bash

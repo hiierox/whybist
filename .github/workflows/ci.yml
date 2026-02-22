@@ -2,11 +2,11 @@ name: CI
 
 on:
   push:
-    path:
+    paths:
       - "services/auth/**"
   pull_request:
-    path:
-     - "services/auth/**"
+    paths:
+      - "services/auth/**"
 
 jobs:
   lint:
@@ -14,31 +14,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: ./.github/actions/python-ci
         with:
-          python-version: "3.14"
-
-      - name: Install poetry
-        run: pip install poetry
-
-      - name: Cache poetry
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/pypoetry
-            ~/.virtualenvs
-          key: poetry-${{ runner.os }}-${{ hashFiles('services/auth/poetry.lock') }}
-
-      - name: Install dependencies
-        working-directory: services/auth
-        run: poetry install --no-interaction --no-root
+          service-path: services/auth
 
       - name: Ruff check
-        working-directory: services/auth
         run: poetry run ruff check src
+        working-directory: services/auth
 
 
   typecheck:
@@ -47,28 +29,10 @@ jobs:
     needs: lint
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: ./.github/actions/python-ci
         with:
-          python-version: "3.14"
-
-      - name: Install poetry
-        run: pip install poetry
-
-      - name: Cache poetry
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/pypoetry
-            ~/.virtualenvs
-          key: poetry-${{ runner.os }}-${{ hashFiles('services/auth/poetry.lock') }}
-
-      - name: Install dependencies
-        working-directory: services/auth
-        run: poetry install --no-interaction --no-root
+          service-path: services/auth
 
       - name: Mypy
-        working-directory: services/auth
         run: poetry run mypy src
+        working-directory: services/auth
