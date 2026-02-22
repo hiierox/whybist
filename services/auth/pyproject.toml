@@ -82,6 +82,7 @@ ignore = [
     "S104",   # possible binding to all interfaces (for development server)
     "S105",
     "S106",
+    "W291",   # Trailing whitespace (disabled for docstrings double spaces)
 ]
 
 

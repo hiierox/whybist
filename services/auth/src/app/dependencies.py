@@ -9,7 +9,7 @@ from app.core.security import decode_token
 from app.database.database import get_async_session
 from app.logic.auth_service import AuthService
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/auth/login')
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl='login')
 
 
 def get_user_id_from_token(token: str = Depends(oauth2_scheme)) -> UUID4:

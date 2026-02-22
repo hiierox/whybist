@@ -28,6 +28,19 @@ router = APIRouter()
 async def register_user(
     request: RegisterRequest, auth_service: AuthService = Depends(get_auth_service)
 ) -> Any:
+    """Endpoint for registration  
+    Args:    
+        request (RegisterRequest): email, username(optinal), password  
+        auth_service (AuthService): Defaults to Depends(get_auth_service).
+
+    Raises:  
+        HTTPException: 400 UserAlredyExists if email OR username already exists. So user
+        can't actually understand what specifically taken.  
+        HTTPException: BaseException - Unexpected error
+
+    Returns:
+        UserResponse: User object without password 
+    """
     try:
         return await auth_service.register(request)
     except UserAlreadyExistsError as e:
@@ -46,6 +59,19 @@ async def register_user(
 async def login_user(
     request: LoginRequest, auth_service: AuthService = Depends(get_auth_service)
 ) -> Token:
+    """Endpoint for login  
+
+    Args:  
+        request (LoginRequest): email or username, password  
+        auth_service (AuthService): Defaults to Depends(get_auth_service).  
+
+    Raises:  
+        HTTPException: status 401 - invalid credentials  
+        HTTPException: status 500 - unexpected error  
+
+    Returns:  
+        Token: access and refresh tokens + token_type
+    """
     try:
         return await auth_service.login(request)
     except InvalidCredentialsError as e:
@@ -64,6 +90,19 @@ async def me(
     user_id: UUID4 = Depends(get_user_id_from_token),
     auth_service: AuthService = Depends(get_auth_service)
     ) -> Any:
+    """Returns User object with public info  
+
+    Args:  
+        user_id (UUID4): Defaults to Depends(get_user_id_from_token).    
+        auth_service (AuthService): Defaults to Depends(get_auth_service).  
+
+    Raises:  
+        HTTPException: status 404 - user not found  
+        HTTPException: status 500 - unexpected error  
+
+    Returns:  
+        UserResponse:  User object without password  
+    """
     try:
         return await auth_service.get_user_by_id(user_id)
     except UserNotFoundError as e:
@@ -83,6 +122,21 @@ async def change_password(
     user_id: UUID4 = Depends(get_user_id_from_token),
     auth_service: AuthService = Depends(get_auth_service)
     ) -> Token:
+    """Endpoint for changing password  
+
+    Args:  
+        request (ChangePasswordRequest): current password and new one   
+        user_id (UUID4): Defaults to Depends(get_user_id_from_token).  
+        auth_service (AuthService): Defaults to Depends(get_auth_service).  
+
+    Raises:  
+        HTTPException: status 401 - wrong password  
+        HTTPException: status 404 - user with this id (from token) not found  
+        HTTPException: status 500 - unexpected error  
+
+    Returns:  
+        Token: access and refresh tokens + token_type
+    """
     try:
         return await auth_service.change_password(user_id, request)
     except InvalidCredentialsError as e:
@@ -98,12 +152,26 @@ async def change_password(
         ) from e
 
 
-@router.patch('/me')
+@router.patch('/me', response_model=UserResponse, status_code=status.HTTP_200_OK)
 async def update_user(
     request: UserUpdateRequest,
     user_id: UUID4 = Depends(get_user_id_from_token),
     auth_service: AuthService = Depends(get_auth_service)
     ) -> Any:
+    """Endpoint for updating user data
+
+    Args:  
+        request (UserUpdateRequest): email and/or username  
+        user_id (UUID4): Defaults to Depends(get_user_id_from_token).  
+        auth_service (AuthService): Defaults to Depends(get_auth_service).
+
+    Raises:  
+        HTTPException: status 400 - username or email already taken  
+        HTTPException: status 500 - unexpected error 
+
+    Returns:  
+        UserResponse: User object without password  
+    """
     try:
         return await auth_service.change_email_or_username(user_id, request)
     except UserAlreadyExistsError as e:

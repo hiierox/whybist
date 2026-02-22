@@ -40,6 +40,17 @@ class AuthService:
         return user_data
 
     async def register(self, request: RegisterRequest) -> User:
+        """User registration 
+
+        Args:
+            request (RegisterRequest): email, username(optional), password
+
+        Raises:
+            UserAlreadyExistsError: email or username already taken
+
+        Returns:
+            User: User object without password 
+        """
         salt = bcrypt.gensalt()
         hashed_password = bcrypt.hashpw(request.password.encode(), salt).decode('utf-8')
 
@@ -61,6 +72,17 @@ class AuthService:
         return user_data
 
     async def login(self, request: LoginRequest) -> Token:
+        """Login logic
+
+        Args:
+            request (LoginRequest): email/username, password
+
+        Raises:
+            InvalidCredentialsError: Invalid username or password
+
+        Returns:
+            Token: access and refresh tokens + token_type
+        """
         user_repo = UserRepository(self.session)
         user_data = await user_repo.get_user_by_email_or_username(request.identifier)
         logger.info('Successfully got user by username|email')
@@ -83,6 +105,19 @@ class AuthService:
     async def change_password(
         self, user_id: UUID4, request: ChangePasswordRequest
     ) -> Token:
+        """Set new password to user account
+
+        Args:
+            user_id (UUID4): Depends(get_user_id_from_token)
+            request (ChangePasswordRequest): current and new passwords
+
+        Raises:
+            UserNotFoundError: user not found
+            InvalidCredentialsError: wrong current password
+
+        Returns:
+            Token: _description_
+        """
         async with self.session.begin():
             user_repo = UserRepository(self.session)
             user_data = await user_repo.get_user_by_id(user_id)
@@ -111,6 +146,19 @@ class AuthService:
     async def change_email_or_username(
         self, user_id: UUID4, request: UserUpdateRequest
     ) -> User:
+        """AI is creating summary for change_email_or_username
+
+        Args:
+            user_id (UUID4): [description]
+            request (UserUpdateRequest): [description]
+
+        Raises:
+            UserNotFoundError: user not found because token is wrong
+            UserAlreadyExistsError: email or username already taken
+
+        Returns:
+            User: User object without a password 
+        """
         to_update = request.model_dump(exclude_unset=True)
         try:
             async with self.session.begin():
