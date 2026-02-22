@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 
 from pydantic import UUID4
@@ -6,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from .models import User
 
-
+logger = logging.getLogger(__name__)
 class UserRepository:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
@@ -24,10 +25,12 @@ class UserRepository:
     async def create_user(self, user_data: User) -> User:
         self.session.add(user_data)
         await self.session.flush()
+        logger.info('Session flushed')
         return user_data
 
     async def update_user(self, user: User, **user_data: Any) -> User:
         for key, value in user_data.items():
             setattr(user, key, value)
         await self.session.flush()
+        logger.info('Session flushed')
         return user
