@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v4
+
       - uses: ./.github/actions/python-ci
         with:
           service-path: services/auth
@@ -29,6 +31,8 @@ jobs:
     needs: lint
 
     steps:
+      - uses: actions/checkout@v4
+
       - uses: ./.github/actions/python-ci
         with:
           service-path: services/auth
