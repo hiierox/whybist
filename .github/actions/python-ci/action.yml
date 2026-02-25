@@ -27,6 +27,6 @@ runs:
         key: poetry-${{ runner.os }}-${{ hashFiles(format('{0}/poetry.lock', inputs.service-path)) }}
 
     - name: Install dependencies (dev only)
-      run: poetry install --only dev --no-interaction --no-root
+      run: poetry install --no-interaction --no-root
       working-directory: ${{ inputs.service-path }}
       shell: bash
