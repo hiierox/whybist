@@ -1,3 +1,6 @@
+from contextlib import asynccontextmanager
+from unittest.mock import AsyncMock, patch
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -78,3 +81,32 @@ async def user_factory(client):
         'password': user_data['password']
     })
     return user_data, response.json()['access_token']
+
+
+@pytest.fixture
+def mock_user_repo():
+    with patch("app.logic.auth_service.UserRepository") as repo_cls:
+        repo = repo_cls.return_value
+        repo.get_user_by_id = AsyncMock()
+        repo.get_user_by_email_or_username = AsyncMock()
+        repo.create_user = AsyncMock()
+        repo.update_user = AsyncMock()
+        yield repo_cls, repo
+
+
+@asynccontextmanager
+async def _tx_cm():
+    yield
+
+@pytest.fixture
+def mock_session():
+    session = AsyncMock()
+    session.begin = _tx_cm
+    return session
+
+@pytest.fixture
+def make_user():
+    def _make_user(email="test@example.com", username="user1", hashed_password="hash"):
+        from app.database.models import User
+        return User(email=email, username=username, hashed_password=hashed_password)
+    return _make_user
