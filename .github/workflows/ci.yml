@@ -39,7 +39,7 @@ jobs:
 
   tests:
     runs-on: ubuntu-latest
-    needs: lint
+    needs: typecheck
 
     services:
       postgres:
@@ -73,3 +73,24 @@ jobs:
       - name: Run tests
         run: poetry run pytest
         working-directory: services/auth
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: tests
+    steps:
+      - uses: actions/checkout@v4
+
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+        run: |
+          IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/auth
+          docker build -t $IMAGE_NAME:latest -t $IMAGE_NAME:${{ github.sha }} services/auth
+
+        run: |
+          IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/auth
+          docker push $IMAGE_NAME:latest
+          docker push $IMAGE_NAME:${{ github.sha }}
