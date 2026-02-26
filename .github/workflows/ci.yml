@@ -96,6 +96,6 @@ jobs:
           docker build -t $IMAGE_NAME:latest -t $IMAGE_NAME:${{ github.sha }} services/auth
 
       - run: |
-          IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/auth
+          IMAGE_NAME=ghcr.io/${{ github.repository }}/auth
           docker push $IMAGE_NAME:latest
           docker push $IMAGE_NAME:${{ github.sha }}
