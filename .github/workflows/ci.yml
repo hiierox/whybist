@@ -80,17 +80,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-        uses: docker/login-action@v2
+      - uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-        run: |
+      - run: |
           IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/auth
           docker build -t $IMAGE_NAME:latest -t $IMAGE_NAME:${{ github.sha }} services/auth
 
-        run: |
+      - run: |
           IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/auth
           docker push $IMAGE_NAME:latest
           docker push $IMAGE_NAME:${{ github.sha }}
