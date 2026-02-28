@@ -6,6 +6,7 @@ from pydantic import UUID4
 from app.api.schemas import (
     ChangePasswordRequest,
     LoginRequest,
+    RefreshRequest,
     RegisterRequest,
     Token,
     UserResponse,
@@ -158,3 +159,16 @@ async def update_user(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
             ) from e
+
+
+@router.post('/refresh', response_model=Token, status_code=status.HTTP_200_OK)
+async def refresh_token(
+    request: RefreshRequest,
+    auth_service: AuthService = Depends(get_auth_service)
+    ) -> Token:
+    try:
+        return await auth_service.refresh_token(request)
+    except InvalidCredentialsError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e)
+        ) from e

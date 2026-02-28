@@ -1,4 +1,5 @@
 import logging
+from uuid import UUID
 
 import bcrypt
 from pydantic import UUID4
@@ -8,16 +9,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.schemas import (
     ChangePasswordRequest,
     LoginRequest,
+    RefreshRequest,
     RegisterRequest,
     Token,
     UserUpdateRequest,
 )
 from app.core.exceptions import (
     InvalidCredentialsError,
+    TokenValidationError,
     UserAlreadyExistsError,
     UserNotFoundError,
 )
-from app.core.security import create_access_token, create_refresh_token
+from app.core.security import create_access_token, create_refresh_token, decode_token
 from app.database.models import User
 from app.database.repository import UserRepository
 
@@ -175,3 +178,24 @@ class AuthService:
             raise UserAlreadyExistsError(
                 'User with this email or username already exists'
             ) from e
+
+
+    async def refresh_token(self, request: RefreshRequest) -> Token:
+        """Create new pair of tokens: access and refresh"""
+        try:
+            payload = decode_token(request.refresh_token)
+            if payload.get('type') != 'refresh':
+                raise InvalidCredentialsError('Invalid token type')
+            user_id = payload.get('sub')
+            if not user_id:
+                raise InvalidCredentialsError('Invalid token payload')
+
+            refresh_token = create_refresh_token(UUID(user_id))
+            access_token = create_access_token(UUID(user_id))
+            return Token(
+                refresh_token=refresh_token,
+                access_token=access_token,
+                token_type='bearer'
+            )
+        except TokenValidationError as e:
+            raise InvalidCredentialsError('Invalid refresh token') from e

@@ -8,11 +8,13 @@ from sqlalchemy.exc import IntegrityError
 from app.api.schemas import (
     ChangePasswordRequest,
     LoginRequest,
+    RefreshRequest,
     RegisterRequest,
     UserUpdateRequest,
 )
 from app.core.exceptions import (
     InvalidCredentialsError,
+    TokenValidationError,
     UserAlreadyExistsError,
     UserNotFoundError,
 )
@@ -299,3 +301,35 @@ async def test_change_email_or_username_duplicate_raises_user_already_exists(
     repo_cls.assert_called_once_with(mock_session)
     repo.get_user_by_id.assert_awaited_once_with(user_id)
     repo.update_user.assert_awaited_once_with(user=user, email='duplicate@test.com')
+
+
+@pytest.mark.asyncio
+async def test_refresh_token_success(mock_session):
+    service = AuthService(mock_session)
+    user_id = uuid4()
+    request = RefreshRequest(refresh_token='valid_refresh_token')
+
+    with patch(
+        'app.logic.auth_service.decode_token',
+        return_value={'type': 'refresh', 'sub': str(user_id)}
+    ):
+        with patch('app.logic.auth_service.create_access_token', return_value='access_123'):
+            with patch('app.logic.auth_service.create_refresh_token', return_value='refresh_456'):
+                result = await service.refresh_token(request)
+
+    assert result.access_token == 'access_123'
+    assert result.refresh_token == 'refresh_456'
+    assert result.token_type == 'bearer'
+
+
+@pytest.mark.asyncio
+async def test_refresh_token_invalid_token_raises_invalid_credentials(mock_session):
+    service = AuthService(mock_session)
+    request = RefreshRequest(refresh_token='invalid_refresh_token')
+
+    with patch(
+        'app.logic.auth_service.decode_token',
+        side_effect=TokenValidationError('Invalid token'),
+    ):
+        with pytest.raises(InvalidCredentialsError):
+            await service.refresh_token(request)

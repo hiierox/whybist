@@ -34,3 +34,7 @@ class UserResponse(BaseModel):
     id: UUID4
     email: EmailStr
     username: str | None
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
