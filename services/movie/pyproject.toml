@@ -1,0 +1,18 @@
+[project]
+name = "movie"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Kirill Batrakov",email = "dl9ceb9@gmail.com"}
+]
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi (>=0.134.0,<0.135.0)",
+    "httpx (>=0.28.1,<0.29.0)",
+    "redis (>=7.2.1,<8.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
