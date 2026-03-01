@@ -1,1 +1,9 @@
 .venv
+.vscode
+.env
+.env_auth_db
+.env_user_movie_db
+__pycache__/
+.vscode/
+.ssh/
+.python-version

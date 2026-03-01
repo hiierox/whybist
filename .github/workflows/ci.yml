@@ -1,0 +1,101 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  push:
+    # paths:
+      # - "services/auth/**"
+  pull_request:
+    paths:
+      - "services/auth/**"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/python-ci
+        with:
+          service-path: services/auth
+
+      - run: poetry run ruff check src
+        working-directory: services/auth
+
+  typecheck:
+    runs-on: ubuntu-latest
+    needs: lint
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/python-ci
+        with:
+          service-path: services/auth
+
+      - run: poetry run mypy src
+        working-directory: services/auth
+
+  tests:
+    runs-on: ubuntu-latest
+    needs: typecheck
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+        options: >-
+          --health-cmd="pg_isready -U test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      DATABASE_URL: postgresql+asyncpg://test:test@localhost:5432/test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/python-ci
+        with:
+          service-path: services/auth
+
+      - name: Run migrations
+        run: poetry run alembic upgrade head
+        working-directory: services/auth
+
+      - name: Run tests
+        run: poetry run pytest
+        working-directory: services/auth
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: tests
+
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - run: |
+          IMAGE_NAME=ghcr.io/${{ github.repository }}/auth
+          docker build -t $IMAGE_NAME:latest -t $IMAGE_NAME:${{ github.sha }} services/auth
+
+      - run: |
+          IMAGE_NAME=ghcr.io/${{ github.repository }}/auth
+          docker push $IMAGE_NAME:latest
+          docker push $IMAGE_NAME:${{ github.sha }}
