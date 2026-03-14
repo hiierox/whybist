@@ -1,4 +1,5 @@
 import logging
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 import httpx
@@ -20,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     http_client = httpx.AsyncClient(
         base_url='https://kinopoiskapiunofficial.tech',
         headers={
@@ -117,4 +118,6 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
     logger.exception(
         f'Unhandled error on {request.method} {request.url.path}', exc_info=exc
     )
-    return JSONResponse(status_code=500, content={'detail': 'Internal server error'})
+    return JSONResponse(
+        status_code=500, content={'detail': 'Unexcpected Internal server error'}
+    )

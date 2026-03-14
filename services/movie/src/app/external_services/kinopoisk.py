@@ -3,7 +3,7 @@ from typing import Any
 import httpx
 
 from app.core.exceptions import (
-    KinopoiskApiError,
+    KinopoiskInvalidResponseError,
     KinopoiskLimitExceededError,
     KinopoiskNotFoundError,
     KinopoiskRateLimitError,
@@ -44,7 +44,7 @@ class KinopoiskService:
             404: KinopoiskNotFoundError,
             429: KinopoiskRateLimitError,
         }
-        exc_cls = error_map.get(response.status_code, KinopoiskApiError)
+        exc_cls = error_map.get(response.status_code, KinopoiskInvalidResponseError)
         raise exc_cls(detail)
 
     async def _get(
@@ -62,12 +62,12 @@ class KinopoiskService:
         try:
             payload = response.json()
         except ValueError as e:
-            raise KinopoiskApiError(
+            raise KinopoiskInvalidResponseError(
                 'Kinopoisk API returned invalid JSON payload'
             ) from e
 
         if not isinstance(payload, dict):
-            raise KinopoiskApiError(
+            raise KinopoiskInvalidResponseError(
                 'Kinopoisk API returned unexpected JSON payload'
             )
 
