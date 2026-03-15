@@ -8,14 +8,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.handler import router as kp_router
 from app.config.config import settings
-from app.core.exceptions import (
-    KinopoiskInvalidResponseError,
-    KinopoiskLimitExceededError,
-    KinopoiskNotFoundError,
-    KinopoiskRateLimitError,
-    KinopoiskTransportError,
-    KinopoiskUnauthorizedError,
-)
+from app.core.exceptions import KinopoiskApiError
 
 logger = logging.getLogger(__name__)
 
@@ -41,76 +34,29 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(kp_router)
 
 
-@app.exception_handler(KinopoiskLimitExceededError)
-async def kinopoisk_limit_error_handler(
-    request: Request, exc: KinopoiskLimitExceededError
+@app.exception_handler(KinopoiskApiError)
+async def kinopoisk_api_error_handler(
+    request: Request, exc: KinopoiskApiError
 ) -> JSONResponse:
-    logger.warning(
-        f'Kinopoisk error on {request.method} {request.url.path}', exc_info=exc
-    )
-    return JSONResponse(
-        status_code=exc.status_code, content={'detail': 'Daily request limit exceeded'}
-    )
+    detail_by_code = {
+        401: 'Internal service error',
+        402: 'Daily request limit exceeded',
+        404: 'Movie not found',
+        429: 'RPS exceeded, try again later',
+        503: 'Server temporary unavailable',
+    }
+    detail = detail_by_code.get(exc.status_code, 'External service error')
 
+    if exc.status_code >= 500:
+        logger.exception(
+            f'Kinopoisk error on {request.method} {request.url.path}', exc_info=exc
+        )
+    else:
+        logger.warning(
+            f'Kinopoisk war on {request.method} {request.url.path}', exc_info=exc
+        )
 
-@app.exception_handler(KinopoiskNotFoundError)
-async def kinopoisk_not_found_error_handler(
-    request: Request, exc: KinopoiskNotFoundError
-) -> JSONResponse:
-    logger.warning(
-        f'Kinopoisk error on {request.method} {request.url.path}', exc_info=exc
-    )
-    return JSONResponse(
-        status_code=exc.status_code, content={'detail': 'Movie not found'}
-    )
-
-
-@app.exception_handler(KinopoiskTransportError)
-async def kinopoisk_transport_error_handler(
-    request: Request, exc: KinopoiskTransportError
-) -> JSONResponse:
-    logger.exception(
-        f'Kinopoisk error on {request.method} {request.url.path}', exc_info=exc
-    )
-    return JSONResponse(
-        status_code=exc.status_code, content={'detail': 'Server temporary unavailable'}
-    )
-
-
-@app.exception_handler(KinopoiskRateLimitError)
-async def kinopoisk_rate_limit_error_handler(
-    request: Request, exc: KinopoiskRateLimitError
-) -> JSONResponse:
-    logger.warning(
-        f'Kinopoisk error on {request.method} {request.url.path}', exc_info=exc
-    )
-    return JSONResponse(
-        status_code=exc.status_code, content={'detail': 'RPS exceeded, try again later'}
-    )
-
-
-@app.exception_handler(KinopoiskUnauthorizedError)
-async def kinopoisk_unauthorized_error_handler(
-    request: Request, exc: KinopoiskUnauthorizedError
-) -> JSONResponse:
-    logger.warning(
-        f'Kinopoisk error on {request.method} {request.url.path}', exc_info=exc
-    )
-    return JSONResponse(
-        status_code=exc.status_code, content={'detail': 'Internal service error'}
-    )
-
-
-@app.exception_handler(KinopoiskInvalidResponseError)
-async def kinipoisk_invalid_response_handler(
-    request: Request, exc: KinopoiskUnauthorizedError
-) -> JSONResponse:
-    logger.exception(
-        f'Kinopoisk error on {request.method} {request.url.path}', exc_info=exc
-    )
-    return JSONResponse(
-        status_code=exc.status_code, content={'detail': 'External service error'}
-    )
+    return JSONResponse(status_code=exc.status_code, content={'detail': detail})
 
 
 @app.exception_handler(Exception)
@@ -119,5 +65,5 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
         f'Unhandled error on {request.method} {request.url.path}', exc_info=exc
     )
     return JSONResponse(
-        status_code=500, content={'detail': 'Unexcpected Internal server error'}
+        status_code=500, content={'detail': 'Unexpected internal server error'}
     )

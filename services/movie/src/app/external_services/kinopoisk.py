@@ -3,6 +3,7 @@ from typing import Any
 import httpx
 
 from app.core.exceptions import (
+    KinopoiskApiError,
     KinopoiskInvalidResponseError,
     KinopoiskLimitExceededError,
     KinopoiskNotFoundError,
@@ -44,7 +45,7 @@ class KinopoiskService:
             404: KinopoiskNotFoundError,
             429: KinopoiskRateLimitError,
         }
-        exc_cls = error_map.get(response.status_code, KinopoiskInvalidResponseError)
+        exc_cls = error_map.get(response.status_code, KinopoiskApiError)
         raise exc_cls(detail)
 
     async def _get(
