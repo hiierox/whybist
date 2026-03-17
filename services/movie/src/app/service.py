@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 import httpx
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from redis.asyncio import Redis
 
 from app.api.handler import router as kp_router
 from app.config.config import settings
@@ -26,8 +27,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     )
     app.state.http_client = http_client
 
+    redis_client = Redis(
+        host=settings.REDIS_HOST, port=settings.REDIS_PORT, decode_responses=True
+    )
+    app.state.redis_client = redis_client
+
     yield
     await http_client.aclose()
+    await redis_client.aclose()
 
 
 app = FastAPI(lifespan=lifespan)
